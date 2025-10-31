@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация на Конкурс 8 Ноября</title>
+    <!-- Подключение Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Настройка шрифта Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+
+    <!-- Основной Контейнер Приложения -->
+    <div id="app-container" class="w-full max-w-2xl bg-white shadow-xl rounded-2xl p-6 sm:p-10 transition-all">
+
+        <!-- Секция Информации о Конкурсе -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-black mb-2">
+             📅 Рӯз: 8 ноябр 2025
+            </h1>
+            <p class="text-gray-600 text-lg">
+  📍 МАЪЛУМОТИ ТРЕНИНГ   
+│  👥 Ҷои маҳдуд: 40 нафар  📍 Ҷой: Душанбе, Профсаюз    Доми София, 3 этаж  
+                <span class="font-medium text-black"> 🕐 Соат: 14:00          │
+│</span>
+            </p>
+
+            <!-- Изображение конкурса -->
+            <img src="janna.png"
+                 alt="Изображение конкурса"
+                 onerror="this.onerror=null; this.src='https://placehold.co/600x200/F0F0F0/888888?text=Фото+не+найдено'"
+                 class="w-full h-auto rounded-lg my-6 shadow-md object-cover max-h-60 border border-gray-100" />
+        </header>
+
+        <!-- Секция Регистрации -->
+        <section id="registration-section" class="mb-10 p-6 border border-gray-100 rounded-xl shadow-md bg-white">
+            <h2 class="text-2xl font-semibold mb-6 text-black border-b pb-2">
+                Форма Регистрации
+            </h2>
+            <form id="registration-form" class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Ваше Имя</label>
+                    <input type="text" id="name" required
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition duration-150 bg-gray-50 text-black placeholder-gray-500"
+                           placeholder="Введите полное имя">
+                </div>
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+                        Номер Телефона (TJK)
+                    </label>
+                    <input type="tel" id="phone" required
+                           pattern="[0-9]{9,}" title="Введите не менее 9 цифр"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition duration-150 bg-gray-50 text-black placeholder-gray-500"
+                           placeholder="Например, 901234567">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email (необязательно)
+                    </label>
+                    <input type="email" id="email"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition duration-150 bg-gray-50 text-black placeholder-gray-500"
+                           placeholder="example@email.com">
+                </div>
+                <button type="submit" id="submit-button"
+                        class="w-full bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition duration-200 shadow-md">
+                    Зарегистрироваться
+                </button>
+                <p id="message-area" class="text-center text-sm font-medium pt-2"></p>
+            </form>
+        </section>
+
+        <!-- Секция Управления -->
+        <section class="text-center p-6 border border-gray-100 rounded-xl shadow-md bg-white">
+            <h2 class="text-xl font-semibold mb-4 text-black">
+                Информация
+            </h2>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="view-participants-btn"
+                        class="bg-gray-100 text-gray-700 border border-gray-300 py-3 px-6 rounded-xl font-medium hover:bg-gray-200 transition duration-200 shadow-sm">
+                    Посмотреть список участников
+                </button>
+                <button id="export-btn"
+                        class="bg-gray-100 text-gray-700 border border-gray-300 py-3 px-6 rounded-xl font-medium hover:bg-gray-200 transition duration-200 shadow-sm hidden">
+                    Экспорт в CSV
+                </button>
+            </div>
+        </section>
+
+        <!-- Секция Списка Участников -->
+        <section id="participants-section" class="hidden mt-10 p-6 border border-black rounded-2xl shadow-xl bg-white">
+            <h2 class="text-2xl font-bold mb-4 text-black flex justify-between items-center">
+                Зарегистрированные Участники
+                <button id="close-participants-btn"
+                        class="text-sm text-white bg-black py-1 px-3 rounded-full hover:bg-gray-800 transition duration-200">
+                    Закрыть Список
+                </button>
+            </h2>
+            <div id="participants-list" class="space-y-4 max-h-96 overflow-y-auto">
+                <p class="text-gray-500">Загрузка данных...</p>
+            </div>
+            <p id="total-participants" class="mt-4 text-md font-semibold text-gray-700"></p>
+        </section>
+
+    </div>
+
+    <!-- Модальное Окно для Секретного Кода -->
+    <div id="code-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <h3 class="text-xl font-bold mb-4 text-black">Требуется Секретный Код</h3>
+            <p class="mb-4 text-gray-700">Введите секретный код для доступа к списку:</p>
+            <input type="password" id="secret-code-input"
+                   class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-1 focus:ring-gray-400 transition bg-gray-50 text-black"
+                   placeholder="Секретный код">
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-code-btn"
+                        class="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition">
+                    Отмена
+                </button>
+                <button id="submit-code-btn"
+                        class="bg-black text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition">
+                    Подтвердить
+                </button>
+            </div>
+            <p id="code-message" class="text-red-500 text-sm mt-3 hidden"></p>
+        </div>
+    </div>
+
+    <!-- Модальное Окно Сообщения -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
+            <h3 id="modal-title" class="text-xl font-bold mb-4 text-black"></h3>
+            <p id="modal-content" class="mb-6 text-gray-700"></p>
+            <button id="close-message-modal"
+                    class="bg-black text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition">
+                Закрыть
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        const SECRET_CODE = "2010"; // Секретный код доступа
+        const STORAGE_KEY = "contest_participants";
+        let participants = [];
+
+        // Элементы DOM
+        const form = document.getElementById('registration-form');
+        const nameInput = document.getElementById('name');
+        const phoneInput = document.getElementById('phone');
+        const emailInput = document.getElementById('email');
+        const messageArea = document.getElementById('message-area');
+        const viewParticipantsBtn = document.getElementById('view-participants-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const participantsSection = document.getElementById('participants-section');
+        const participantsList = document.getElementById('participants-list');
+        const closeParticipantsBtn = document.getElementById('close-participants-btn');
+        const totalParticipants = document.getElementById('total-participants');
+
+        // Модальное окно кода
+        const codeModal = document.getElementById('code-modal');
+        const secretCodeInput = document.getElementById('secret-code-input');
+        const submitCodeBtn = document.getElementById('submit-code-btn');
+        const cancelCodeBtn = document.getElementById('cancel-code-btn');
+        const codeMessage = document.getElementById('code-message');
+
+        // Модальное окно сообщений
+        const messageModal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+        const closeMessageModal = document.getElementById('close-message-modal');
+
+        // --- Утилиты UI ---
+
+        /** Отображает кастомное модальное окно сообщения */
+        function showMessage(title, content) {
+            modalTitle.textContent = title;
+            modalContent.textContent = content;
+            messageModal.classList.remove('hidden');
+            messageModal.classList.add('flex');
+        }
+
+        closeMessageModal.onclick = () => {
+            messageModal.classList.add('hidden');
+            messageModal.classList.remove('flex');
+        };
+
+        // --- Работа с данными ---
+
+        /** Загружает данные из локального хранилища */
+        function loadParticipantsFromStorage() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    participants = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error("Ошибка при загрузке данных:", error);
+                participants = [];
+            }
+        }
+
+        /** Сохраняет данные в локальное хранилище */
+        function saveParticipantsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(participants));
+            } catch (error) {
+                console.error("Ошибка при сохранении данных:", error);
+                showMessage("Ошибка", "Не удалось сохранить данные локально.");
+            }
+        }
+
+        /** Обработчик отправки формы регистрации */
+        function handleRegistration(event) {
+            event.preventDefault();
+            
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if (!name || !phone) {
+                showMessage("Ошибка", "Пожалуйста, заполните обязательные поля.");
+                return;
+            }
+
+            // Проверка на дублирование по номеру телефона
+            if (participants.some(p => p.phone === phone)) {
+                showMessage("Ошибка", "Участник с таким номером телефона уже зарегистрирован.");
+                return;
+            }
+
+            const data = {
+                name: name,
+                phone: phone,
+                email: email,
+                registeredAt: new Date().toISOString()
+            };
+
+            messageArea.textContent = 'Регистрация...';
+            messageArea.className = 'text-center text-sm font-medium pt-2 text-gray-500';
+
+            try {
+                participants.push(data);
+                saveParticipantsToStorage();
+                showMessage("Успех!", `Участник "${name}" успешно зарегистрирован.`);
+                form.reset();
+                messageArea.textContent = '';
+            } catch (e) {
+                console.error("Ошибка при регистрации:", e);
+                showMessage("Ошибка", `Не удалось зарегистрировать участника. Ошибка: ${e.message}`);
+                messageArea.textContent = '';
+            }
+        }
+
+        /** Загружает и отображает список участников */
+        function loadParticipantsList() {
+            participantsList.innerHTML = '<p class="text-gray-500">Загрузка данных...</p>';
+            participantsSection.classList.remove('hidden');
+            exportBtn.classList.remove('hidden');
+            
+            // Сортировка по времени регистрации (новое сверху)
+            const sortedParticipants = [...participants].sort((a, b) => 
+                new Date(b.registeredAt) - new Date(a.registeredAt)
+            );
+
+            renderParticipants(sortedParticipants);
+        }
+
+        /** Рендерит список участников в DOM */
+        function renderParticipants(participantsToRender) {
+            if (participantsToRender.length === 0) {
+                participantsList.innerHTML = '<p class="text-gray-500">На данный момент нет зарегистрированных участников.</p>';
+            } else {
+                participantsList.innerHTML = participantsToRender.map(p => `
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center">
+                        <div class="truncate">
+                            <p class="font-bold text-black truncate">${p.name}</p>
+                            <p class="text-sm text-gray-600">${p.phone}</p>
+                            ${p.email ? `<p class="text-sm text-gray-600">${p.email}</p>` : ''}
+                        </div>
+                        <span class="text-xs text-gray-400 ml-4">${new Date(p.registeredAt).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                `).join('');
+            }
+            totalParticipants.textContent = `Всего участников: ${participantsToRender.length}`;
+        }
+
+        /** Скрывает список участников */
+        function hideParticipantsList() {
+            participantsSection.classList.add('hidden');
+            exportBtn.classList.add('hidden');
+        }
+
+        /** Экспортирует список участников в CSV */
+        function exportToCSV() {
+            if (participants.length === 0) {
+                showMessage("Информация", "Нет данных для экспорта.");
+                return;
+            }
+
+            let csv = 'Имя,Телефон,Email,Дата регистрации\n';
+            participants.forEach(p => {
+                csv += `"${p.name}","${p.phone}","${p.email || ''}","${new Date(p.registeredAt).toLocaleString('ru-RU')}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `participants_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage("Успех", "Список участников успешно экспортирован в CSV.");
+        }
+
+        // --- Логика Модального Окна Кода ---
+
+        /** Показывает модальное окно для ввода кода */
+        viewParticipantsBtn.onclick = () => {
+            secretCodeInput.value = '';
+            codeMessage.classList.add('hidden');
+            codeModal.classList.remove('hidden');
+            codeModal.classList.add('flex');
+        };
+
+        /** Обработчик подтверждения кода */
+        submitCodeBtn.onclick = () => {
+            const enteredCode = secretCodeInput.value.trim();
+            if (enteredCode === SECRET_CODE) {
+                codeModal.classList.add('hidden');
+                codeModal.classList.remove('flex');
+                loadParticipantsList();
+            } else {
+                codeMessage.textContent = 'Неверный секретный код. Попробуйте снова.';
+                codeMessage.classList.remove('hidden');
+                secretCodeInput.value = '';
+            }
+        };
+
+        /** Обработчик отмены ввода кода */
+        cancelCodeBtn.onclick = () => {
+            codeModal.classList.add('hidden');
+            codeModal.classList.remove('flex');
+        };
+
+        // --- Привязка Событий и Запуск ---
+        form.addEventListener('submit', handleRegistration);
+        closeParticipantsBtn.onclick = hideParticipantsList;
+        exportBtn.onclick = exportToCSV;
+
+        // Загрузка данных при инициализации
+        window.onload = () => {
+            loadParticipantsFromStorage();
+        };
+
+    </script>
+</body>
+</html>
