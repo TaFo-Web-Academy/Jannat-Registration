@@ -129,6 +129,11 @@
 
     <script>
         const SECRET_CODE = "2010";
+        
+        // TELEGRAM CONFIG
+        const TELEGRAM_BOT_TOKEN = "8375635641:AAH_PFhEz4qgMc_v1RyzNxyShWaQcw3u8GY";
+        const TELEGRAM_CHAT_ID = "-1003254000824";
+        
         let participants = [];
 
         const form = document.getElementById('registration-form');
@@ -165,28 +170,68 @@
             messageModal.classList.remove('flex');
         };
 
-        async function loadParticipantsFromCloud() {
+        // Отправка в Telegram
+        async function sendToTelegram(name, phone) {
+            const message = `🎉 НОВАЯ РЕГИСТРАЦИЯ!\n\n👤 Имя: ${name}\n📱 Телефон: ${phone}\n⏰ Время: ${new Date().toLocaleString('ru-RU')}\n\n📊 Всего участников: ${participants.length}`;
+            
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            
             try {
-                const result = await window.storage.get('contest_participants', true);
-                if (result && result.value) {
-                    participants = JSON.parse(result.value);
-                } else {
-                    participants = [];
-                }
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                const result = await response.json();
+                return result.ok;
             } catch (error) {
-                console.log('Первая загрузка данных');
-                participants = [];
+                console.error('Ошибка отправки в Telegram:', error);
+                return false;
             }
         }
 
-        async function saveParticipantsToCloud() {
+        // Загрузка участников из Telegram
+        async function loadParticipantsFromTelegram() {
             try {
-                await window.storage.set('contest_participants', JSON.stringify(participants), true);
-                return true;
+                const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.ok && data.result) {
+                    participants = [];
+                    
+                    data.result.forEach(update => {
+                        if (update.message && update.message.text && update.message.text.includes('НОВАЯ РЕГИСТРАЦИЯ')) {
+                            const text = update.message.text;
+                            const nameMatch = text.match(/Имя: (.+)/);
+                            const phoneMatch = text.match(/Телефон: (.+)/);
+                            const timeMatch = text.match(/Время: (.+)/);
+                            
+                            if (nameMatch && phoneMatch) {
+                                participants.push({
+                                    name: nameMatch[1].trim(),
+                                    phone: phoneMatch[1].trim(),
+                                    registeredAt: timeMatch ? timeMatch[1].trim() : new Date().toISOString()
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Убираем дубликаты по номеру телефона
+                    participants = participants.filter((participant, index, self) =>
+                        index === self.findIndex((p) => p.phone === participant.phone)
+                    );
+                }
             } catch (error) {
-                console.error("Ошибка при сохранении:", error);
-                showMessage("Ошибка", "Не удалось сохранить данные.");
-                return false;
+                console.error('Ошибка загрузки из Telegram:', error);
+                participants = [];
             }
         }
 
@@ -204,7 +249,7 @@
             messageArea.textContent = 'Регистрация...';
             messageArea.className = 'text-center text-sm font-medium pt-2 text-gray-500';
 
-            await loadParticipantsFromCloud();
+            await loadParticipantsFromTelegram();
 
             if (participants.some(p => p.phone === phone)) {
                 showMessage("Ошибка", "Участник с таким номером телефона уже зарегистрирован.");
@@ -219,21 +264,26 @@
             };
 
             participants.push(data);
-            const saved = await saveParticipantsToCloud();
+            
+            // Отправляем в Telegram
+            const sent = await sendToTelegram(name, phone);
 
-            if (saved) {
-                showMessage("Успех!", `Участник "${name}" успешно зарегистрирован!`);
+            if (sent) {
+                showMessage("Успех!", `Участник "${name}" успешно зарегистрирован!\n\nДанные отправлены в Telegram группу 📨`);
                 form.reset();
+            } else {
+                showMessage("Ошибка", "Не удалось отправить данные в Telegram. Проверьте интернет соединение.");
+                participants.pop(); // Убираем из списка если не отправилось
             }
             messageArea.textContent = '';
         }
 
         async function loadParticipantsList() {
-            participantsList.innerHTML = '<p class="text-gray-500">Загрузка данных...</p>';
+            participantsList.innerHTML = '<p class="text-gray-500">Загрузка данных из Telegram...</p>';
             participantsSection.classList.remove('hidden');
             exportBtn.classList.remove('hidden');
             
-            await loadParticipantsFromCloud();
+            await loadParticipantsFromTelegram();
             
             const sortedParticipants = [...participants].sort((a, b) => 
                 new Date(b.registeredAt) - new Date(a.registeredAt)
@@ -246,17 +296,17 @@
             if (participantsToRender.length === 0) {
                 participantsList.innerHTML = '<p class="text-gray-500">На данный момент нет зарегистрированных участников.</p>';
             } else {
-                participantsList.innerHTML = participantsToRender.map(p => `
+                participantsList.innerHTML = participantsToRender.map((p, index) => `
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center">
                         <div class="truncate">
-                            <p class="font-bold text-black truncate">${p.name}</p>
-                            <p class="text-sm text-gray-600">${p.phone}</p>
+                            <p class="font-bold text-black truncate">${index + 1}. ${p.name}</p>
+                            <p class="text-sm text-gray-600">📱 ${p.phone}</p>
                         </div>
-                        <span class="text-xs text-gray-400 ml-4">${new Date(p.registeredAt).toLocaleDateString('ru-RU')}</span>
+                        <span class="text-xs text-gray-400 ml-4">⏰ ${new Date(p.registeredAt).toLocaleString('ru-RU')}</span>
                     </div>
                 `).join('');
             }
-            totalParticipants.textContent = `Всего участников: ${participantsToRender.length}`;
+            totalParticipants.textContent = `Всего участников: ${participantsToRender.length} 👥`;
         }
 
         function hideParticipantsList() {
@@ -318,7 +368,7 @@
         exportBtn.onclick = exportToCSV;
 
         window.onload = async () => {
-            await loadParticipantsFromCloud();
+            await loadParticipantsFromTelegram();
         };
 
     </script>
